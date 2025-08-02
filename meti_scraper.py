@@ -60,12 +60,23 @@ class meti:
 
     def _extract_text(self, page) -> str:
         """Extract text from a PDF page, falling back to OCR if needed."""
-        text = page.extract_text()
+        text = page.extract_text(layout=True)
         if text:
-            return text
+            lines = [line.strip() for line in text.splitlines()]
+            while lines and not lines[0]:
+                lines.pop(0)
+            while lines and not lines[-1]:
+                lines.pop()
+            return "\n".join(lines)
         try:
             image = page.to_image(resolution=300).original
-            return pytesseract.image_to_string(image)
+            ocr_text = pytesseract.image_to_string(image)
+            lines = [line.strip() for line in ocr_text.splitlines()]
+            while lines and not lines[0]:
+                lines.pop(0)
+            while lines and not lines[-1]:
+                lines.pop()
+            return "\n".join(lines)
         except Exception:
             return ""
 
@@ -101,6 +112,7 @@ class meti:
         md_file = pdf_file.with_suffix(".md")
 
         parts = []
+        image_counter = 1
         with pdfplumber.open(pdf_file) as pdf:
             for page in pdf.pages:
                 text = self._extract_text(page)
@@ -110,6 +122,23 @@ class meti:
                     md_table = self._table_to_markdown(table)
                     if md_table:
                         parts.append(md_table)
+                for img in page.images:
+                    bbox = (
+                        img["x0"],
+                        page.height - img["y1"],
+                        img["x1"],
+                        page.height - img["y0"],
+                    )
+                    cropped = page.crop(bbox)
+                    pil_img = cropped.to_image(resolution=300).original
+                    image_path = pdf_file.with_name(
+                        f"{pdf_file.stem}_{image_counter:03d}.png"
+                    )
+                    pil_img.save(image_path)
+                    parts.append(
+                        f"![Figure {image_counter:03d}]({image_path.name})"
+                    )
+                    image_counter += 1
 
         md_file.write_text("\n\n".join(parts), encoding="utf-8")
         return str(md_file)
