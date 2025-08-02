@@ -59,7 +59,7 @@ class meti:
 
         return str(file_path)
 
-    def index_of_industrial_production(self, asof: str) -> list[str]:
+    def index_of_industrial_production(self, date: str) -> list[str]:
         """Download industrial production index Excel files.
 
         This method retrieves three datasets related to the index of
@@ -67,7 +67,7 @@ class meti:
 
         Parameters
         ----------
-        asof : str
+        date: str
             Date string in YYYYMM format appended to each filename.
 
         Returns
@@ -102,7 +102,7 @@ class meti:
         file_paths: list[str] = []
         headers = {"User-Agent": "Mozilla/5.0"}
         for name, url in sources.items():
-            file_path = directory / f"{name}_{asof}.xlsx"
+            file_path = directory / f"{name}_{date}.xlsx"
             try:
                 response = session.get(url, headers=headers, timeout=10)
                 response.raise_for_status()
@@ -274,6 +274,9 @@ if __name__ == "__main__":
         target_wed = monday + timedelta(days=2)
 
     scraper = meti()
+    iip_paths = scraper.index_of_industrial_production(date=today.strftime("%Y%m"))
+    for path in iip_paths:
+        print(path)
     pdf_path = scraper.lng_weekly_inventory(date=target_wed.strftime("%Y%m%d"))
     scraper.pdf_to_markdown(pdf_path)
     scraper.pdf_tables_to_csv(pdf_path)
