@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 
 class meti:
@@ -29,8 +31,27 @@ class meti:
         directory.mkdir(parents=True, exist_ok=True)
         file_path = directory / f"denryoku_LNG_stock_{date}.pdf"
 
-        response = requests.get(self._URL)
-        response.raise_for_status()
+        session = requests.Session()
+        retry = Retry(
+            total=5,
+            backoff_factor=1,
+            status_forcelist=[500, 502, 503, 504],
+            allowed_methods=["GET"],
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+
+        try:
+            response = session.get(
+                self._URL,
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=10,
+            )
+            response.raise_for_status()
+        except requests.exceptions.RequestException as err:
+            raise RuntimeError("Failed to download METI LNG stock PDF") from err
+
         file_path.write_bytes(response.content)
 
         return str(file_path)
