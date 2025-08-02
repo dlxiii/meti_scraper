@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import csv
+from openpyxl import load_workbook
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -60,10 +61,12 @@ class meti:
         return str(file_path)
 
     def index_of_industrial_production(self, date: str) -> list[str]:
-        """Download industrial production index Excel files.
+        """Download industrial production index files.
 
         This method retrieves three datasets related to the index of
         industrial production and saves them with Japanese filenames.
+        For the dataset titled "生産・出荷・在庫・在庫率指数", the sheet named
+        "生産" is additionally exported as a CSV file.
 
         Parameters
         ----------
@@ -73,7 +76,7 @@ class meti:
         Returns
         -------
         list[str]
-            Paths to the downloaded Excel files.
+            Paths to the downloaded Excel files and generated CSV file.
         """
 
         sources = {
@@ -102,7 +105,8 @@ class meti:
         file_paths: list[str] = []
         headers = {"User-Agent": "Mozilla/5.0"}
         for name, url in sources.items():
-            file_path = directory / f"{name}_{date}.xlsx"
+            sanitized_name = name.replace("・", "_")
+            file_path = directory / f"{sanitized_name}_{date}.xlsx"
             try:
                 response = session.get(url, headers=headers, timeout=10)
                 response.raise_for_status()
@@ -110,6 +114,18 @@ class meti:
                 raise RuntimeError(f"Failed to download {name}") from err
             file_path.write_bytes(response.content)
             file_paths.append(str(file_path))
+
+            if name == "生産・出荷・在庫・在庫率指数":
+                wb = load_workbook(file_path, data_only=True, read_only=True)
+                if "生産" in wb.sheetnames:
+                    ws = wb["生産"]
+                    csv_path = directory / f"{sanitized_name}_生産_{date}.csv"
+                    with csv_path.open("w", newline="", encoding="utf-8") as csvfile:
+                        writer = csv.writer(csvfile)
+                        for row in ws.iter_rows(values_only=True):
+                            writer.writerow([cell if cell is not None else "" for cell in row])
+                    file_paths.append(str(csv_path))
+                wb.close()
 
         return file_paths
 
