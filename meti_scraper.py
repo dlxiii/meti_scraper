@@ -84,7 +84,7 @@ class meti:
 
         sources = {
             "過去の製造工業生産能力・稼働率指数（接続指数）":
-                "https://www.meti.go.jp/statistics/tyo/iip/xls/b2020_nsgs1j.xlsx",
+                "https://www.meti.go.jp/statistics/tyo/iip/xls/b2020_sgs1j.xlsx",
             "生産・出荷・在庫・在庫率指数":
                 "https://www.meti.go.jp/statistics/tyo/iip/xls/b2020_gsm1j.xlsx",
             "過去の生産・出荷・在庫・在庫率指数（接続指数），鉱工業総合のみ（暦年・年度・四半期）（1953年～）":
@@ -328,6 +328,6 @@ if __name__ == "__main__":
     iip_paths = scraper.index_of_industrial_production(date=today.strftime("%Y%m"))
     for path in iip_paths:
         print(path)
-    pdf_path = scraper.lng_weekly_inventory(date=target_wed.strftime("%Y%m%d"))
-    scraper.pdf_to_markdown(pdf_path)
-    scraper.pdf_tables_to_csv(pdf_path)
+    # pdf_path = scraper.lng_weekly_inventory(date=target_wed.strftime("%Y%m%d"))
+    # scraper.pdf_to_markdown(pdf_path)
+    # scraper.pdf_tables_to_csv(pdf_path)
