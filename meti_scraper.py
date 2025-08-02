@@ -344,9 +344,11 @@ if __name__ == "__main__":
         target_wed = monday + timedelta(days=2)
 
     scraper = meti()
+
     iip_paths = scraper.index_of_industrial_production(date=today.strftime("%Y%m"))
     for path in iip_paths:
         print(path)
-    # pdf_path = scraper.lng_weekly_inventory(date=target_wed.strftime("%Y%m%d"))
-    # scraper.pdf_to_markdown(pdf_path)
-    # scraper.pdf_tables_to_csv(pdf_path)
+
+    pdf_path = scraper.lng_weekly_inventory(date=target_wed.strftime("%Y%m%d"))
+    scraper.pdf_to_markdown(pdf_path)
+    scraper.pdf_tables_to_csv(pdf_path)
