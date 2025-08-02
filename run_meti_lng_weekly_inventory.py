@@ -1,20 +1,23 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import sys
 
 from meti_scraper import meti
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python run_meti_lng_weekly_inventory.py YYYY/MM/DD")
-        sys.exit(1)
+    today = datetime.today()
+    weekday = today.weekday()  # Monday = 0, Sunday = 6
 
-    date_str = sys.argv[1]
-    dt = datetime.strptime(date_str, "%Y/%m/%d")
+    if weekday >= 2:
+        monday = today - timedelta(days=weekday)
+        target_wed = monday + timedelta(days=2)
+    else:
+        monday = today - timedelta(days=weekday + 7)
+        target_wed = monday + timedelta(days=2)
 
     scraper = meti()
     try:
-        pdf_path = scraper.lng_weekly_inventory(date=dt.strftime("%Y%m%d"))
+        pdf_path = scraper.lng_weekly_inventory(date=target_wed.strftime("%Y%m%d"))
         scraper.pdf_to_markdown(pdf_path)
         scraper.pdf_tables_to_csv(pdf_path)
     except RuntimeError as err:
