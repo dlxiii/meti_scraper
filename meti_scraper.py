@@ -65,8 +65,10 @@ class meti:
 
         This method retrieves three datasets related to the index of
         industrial production and saves them with Japanese filenames.
-        For the dataset titled "生産・出荷・在庫・在庫率指数", the sheet named
-        "生産" is additionally exported as a CSV file. For the dataset titled
+        For the dataset titled "過去の製造工業生産能力・稼働率指数（接続指数）",
+        the sheet "生産付加価値額" is exported as a CSV file. For the dataset
+        titled "生産・出荷・在庫・在庫率指数", the sheet named "生産" is
+        additionally exported as a CSV file. For the dataset titled
         "過去の生産・出荷・在庫・在庫率指数（接続指数），鉱工業総合のみ"
         "（暦年・年度・四半期）（1953年～）", the sheets "四半期（季調）" and
         "年度（原）" are also exported as CSV files.
@@ -108,7 +110,9 @@ class meti:
         file_paths: list[str] = []
         headers = {"User-Agent": "Mozilla/5.0"}
         for name, url in sources.items():
-            if (
+            if name == "過去の製造工業生産能力・稼働率指数（接続指数）":
+                sanitized_name = "過去の製造工業生産能力_稼働率指数_接続指数"
+            elif (
                 name
                 == "過去の生産・出荷・在庫・在庫率指数（接続指数），鉱工業総合のみ（暦年・年度・四半期）（1953年～）"
             ):
@@ -132,6 +136,21 @@ class meti:
                 if "生産" in wb.sheetnames:
                     ws = wb["生産"]
                     csv_path = directory / f"{sanitized_name}_生産_{date}.csv"
+                    with csv_path.open("w", newline="", encoding="utf-8") as csvfile:
+                        writer = csv.writer(csvfile)
+                        for row in ws.iter_rows(values_only=True):
+                            writer.writerow(
+                                [cell if cell is not None else "" for cell in row]
+                            )
+                    file_paths.append(str(csv_path))
+                wb.close()
+            elif name == "過去の製造工業生産能力・稼働率指数（接続指数）":
+                wb = load_workbook(file_path, data_only=True, read_only=True)
+                if "生産付加価値額" in wb.sheetnames:
+                    ws = wb["生産付加価値額"]
+                    csv_path = directory / (
+                        f"{sanitized_name}_生産付加価値額_{date}.csv"
+                    )
                     with csv_path.open("w", newline="", encoding="utf-8") as csvfile:
                         writer = csv.writer(csvfile)
                         for row in ws.iter_rows(values_only=True):
