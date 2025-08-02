@@ -14,7 +14,8 @@ if __name__ == "__main__":
 
     scraper = meti()
     try:
-        scraper.lng_weekly_inventory(date=dt.strftime("%Y%m%d"))
+        pdf_path = scraper.lng_weekly_inventory(date=dt.strftime("%Y%m%d"))
+        scraper.pdf_to_markdown(pdf_path)
     except RuntimeError as err:
         print(err)
         sys.exit(1)

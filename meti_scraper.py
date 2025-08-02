@@ -4,6 +4,8 @@ from pathlib import Path
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import pdfplumber
+import pytesseract
 
 
 class meti:
@@ -56,6 +58,43 @@ class meti:
 
         return str(file_path)
 
+    def pdf_to_markdown(self, pdf_path: str) -> str:
+        """Convert a PDF to a Markdown file with extracted text.
+
+        The function first tries to extract embedded text from the PDF.
+        If no text is found on a page, it falls back to OCR using
+        ``pytesseract`` for better accuracy.
+
+        Parameters
+        ----------
+        pdf_path : str
+            Path to the source PDF file.
+
+        Returns
+        -------
+        str
+            Path to the generated Markdown file.
+        """
+
+        pdf_file = Path(pdf_path)
+        md_file = pdf_file.with_suffix(".md")
+
+        text_parts = []
+        with pdfplumber.open(pdf_file) as pdf:
+            for page in pdf.pages:
+                text = page.extract_text()
+                if text:
+                    text_parts.append(text)
+                else:
+                    try:
+                        image = page.to_image(resolution=300).original
+                        text_parts.append(pytesseract.image_to_string(image))
+                    except Exception:
+                        continue
+
+        md_file.write_text("\n\n".join(text_parts), encoding="utf-8")
+        return str(md_file)
+
 
 if __name__ == "__main__":
     today = datetime.today()
@@ -63,4 +102,5 @@ if __name__ == "__main__":
     last_wednesday = today - timedelta(days=offset)
 
     scraper = meti()
-    scraper.lng_weekly_inventory(date=last_wednesday.strftime("%Y%m%d"))
+    pdf_path = scraper.lng_weekly_inventory(date=last_wednesday.strftime("%Y%m%d"))
+    scraper.pdf_to_markdown(pdf_path)
