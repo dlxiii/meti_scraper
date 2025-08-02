@@ -10,7 +10,7 @@ import pytesseract
 
 
 class meti:
-    """Downloader for METI weekly LNG stock PDF."""
+    """Downloader for METI data such as LNG stock and industrial production."""
 
     _URL = (
         "https://www.enecho.meti.go.jp/category/electricity_and_gas/"
@@ -58,6 +58,60 @@ class meti:
         file_path.write_bytes(response.content)
 
         return str(file_path)
+
+    def index_of_industrial_production(self, asof: str) -> list[str]:
+        """Download industrial production index Excel files.
+
+        This method retrieves three datasets related to the index of
+        industrial production and saves them with Japanese filenames.
+
+        Parameters
+        ----------
+        asof : str
+            Date string in YYYYMM format appended to each filename.
+
+        Returns
+        -------
+        list[str]
+            Paths to the downloaded Excel files.
+        """
+
+        sources = {
+            "過去の製造工業生産能力・稼働率指数（接続指数）":
+                "https://www.meti.go.jp/statistics/tyo/iip/xls/b2020_nsgs1j.xlsx",
+            "生産・出荷・在庫・在庫率指数":
+                "https://www.meti.go.jp/statistics/tyo/iip/xls/b2020_gsm1j.xlsx",
+            "過去の生産・出荷・在庫・在庫率指数（接続指数），鉱工業総合のみ（暦年・年度・四半期）（1953年～）":
+                "https://www.meti.go.jp/statistics/tyo/iip/xls/b2020_sosq1j.xlsx",
+        }
+
+        directory = Path("xls") / "iip"
+        directory.mkdir(parents=True, exist_ok=True)
+
+        session = requests.Session()
+        retry = Retry(
+            total=5,
+            backoff_factor=1,
+            status_forcelist=[500, 502, 503, 504],
+            allowed_methods=["GET"],
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+
+        file_paths: list[str] = []
+        headers = {"User-Agent": "Mozilla/5.0"}
+        for name, url in sources.items():
+            file_path = directory / f"{name}_{asof}.xlsx"
+            try:
+                response = session.get(url, headers=headers, timeout=10)
+                response.raise_for_status()
+            except requests.exceptions.RequestException as err:
+                raise RuntimeError(f"Failed to download {name}") from err
+            file_path.write_bytes(response.content)
+            file_paths.append(str(file_path))
+
+        return file_paths
 
     def _extract_text(self, page) -> str:
         """Extract text from a PDF page, falling back to OCR if needed."""
