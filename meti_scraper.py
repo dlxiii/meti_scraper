@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.parse import quote
 
 import csv
 from openpyxl import load_workbook
@@ -180,6 +181,90 @@ class meti:
                                 )
                         file_paths.append(str(csv_path))
                 wb.close()
+
+        return file_paths
+
+    def index_of_tertiary_industry_activity(self, date: str) -> list[str]:
+        """Download tertiary industry activity index files.
+
+        This method retrieves two datasets related to the index of
+        tertiary industry activity and saves them with Japanese filenames.
+        The workbook titled ``第３次産業活動指数_季節指数`` contains only one
+        sheet, which is exported as a CSV file. For the workbook titled
+        ``第３次産業活動指数_接続指数``, the sheet ``季調済指数`` is exported
+        as a CSV file.
+
+        Parameters
+        ----------
+        date: str
+            Date string in YYYYMM format appended to each filename.
+
+        Returns
+        -------
+        list[str]
+            Paths to the downloaded Excel files and generated CSV file.
+        """
+
+        base_url = "https://www.meti.go.jp/statistics/tyo/sanzi/xls/"
+        directory = Path("xls") / "ita"
+        directory.mkdir(parents=True, exist_ok=True)
+
+        session = requests.Session()
+        retry = Retry(
+            total=5,
+            backoff_factor=1,
+            status_forcelist=[500, 502, 503, 504],
+            allowed_methods=["GET"],
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+
+        headers = {"User-Agent": "Mozilla/5.0"}
+        file_paths: list[str] = []
+
+        seasonal_name = f"第３次産業活動指数_季節指数_{date}.xlsx"
+        seasonal_url = base_url + quote(seasonal_name)
+        try:
+            response = session.get(seasonal_url, headers=headers, timeout=10)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as err:
+            raise RuntimeError("Failed to download seasonal index") from err
+        seasonal_path = directory / seasonal_name
+        seasonal_path.write_bytes(response.content)
+        file_paths.append(str(seasonal_path))
+
+        wb = load_workbook(seasonal_path, data_only=True, read_only=True)
+        ws = wb[wb.sheetnames[0]]
+        seasonal_csv = directory / f"第３次産業活動指数_季節指数_{date}.csv"
+        with seasonal_csv.open("w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile)
+            for row in ws.iter_rows(values_only=True):
+                writer.writerow([cell if cell is not None else "" for cell in row])
+        wb.close()
+        file_paths.append(str(seasonal_csv))
+
+        connected_name = f"第３次産業活動指数_接続指数_{date}.xlsx"
+        connected_url = base_url + quote(connected_name)
+        try:
+            response = session.get(connected_url, headers=headers, timeout=10)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as err:
+            raise RuntimeError("Failed to download connected index") from err
+        connected_path = directory / connected_name
+        connected_path.write_bytes(response.content)
+        file_paths.append(str(connected_path))
+
+        wb = load_workbook(connected_path, data_only=True, read_only=True)
+        if "季調済指数" in wb.sheetnames:
+            ws = wb["季調済指数"]
+            connected_csv = directory / f"第３次産業活動指数_接続指数_季調済指数_{date}.csv"
+            with connected_csv.open("w", newline="", encoding="utf-8") as csvfile:
+                writer = csv.writer(csvfile)
+                for row in ws.iter_rows(values_only=True):
+                    writer.writerow([cell if cell is not None else "" for cell in row])
+            file_paths.append(str(connected_csv))
+        wb.close()
 
         return file_paths
 
