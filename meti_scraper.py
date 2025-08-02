@@ -430,6 +430,10 @@ if __name__ == "__main__":
 
     scraper = meti()
 
+    ita_paths = scraper.index_of_tertiary_industry_activity(date=today.strftime("%Y%m"))
+    for path in ita_paths:
+        print(path)
+
     iip_paths = scraper.index_of_industrial_production(date=today.strftime("%Y%m"))
     for path in iip_paths:
         print(path)
