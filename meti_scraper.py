@@ -29,7 +29,7 @@ class meti:
         str
             Path to the downloaded PDF file.
         """
-        directory = Path("pdf") / "lng"
+        directory = Path("pdf") / "lng" / "stock"
         directory.mkdir(parents=True, exist_ok=True)
         file_path = directory / f"denryoku_LNG_stock_{date}.pdf"
 
