@@ -16,6 +16,7 @@ if __name__ == "__main__":
     try:
         pdf_path = scraper.lng_weekly_inventory(date=dt.strftime("%Y%m%d"))
         scraper.pdf_to_markdown(pdf_path)
+        scraper.pdf_tables_to_csv(pdf_path)
     except RuntimeError as err:
         print(err)
         sys.exit(1)
