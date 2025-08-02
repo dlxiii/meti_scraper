@@ -1,5 +1,4 @@
-import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import requests
@@ -38,12 +37,9 @@ class meti:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python meti_scraper.py YYYY/MM/DD")
-        sys.exit(1)
-
-    date_str = sys.argv[1]
-    dt = datetime.strptime(date_str, "%Y/%m/%d")
+    today = datetime.today()
+    offset = (today.weekday() - 2) % 7 or 7
+    last_wednesday = today - timedelta(days=offset)
 
     scraper = meti()
-    scraper.lng_weekly_inventory(date=dt.strftime("%Y%m%d"))
+    scraper.lng_weekly_inventory(date=last_wednesday.strftime("%Y%m%d"))
