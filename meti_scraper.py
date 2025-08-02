@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import csv
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -91,6 +92,53 @@ class meti:
             md_lines.append("| " + " | ".join(cell or "" for cell in row) + " |")
         return "\n".join(md_lines)
 
+    def _table_to_csv(self, table, csv_path: Path) -> None:
+        """Write a table (list of lists) to a CSV file."""
+        with csv_path.open("w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile)
+            for row in table:
+                writer.writerow([cell or "" for cell in row])
+
+    def pdf_tables_to_csv(self, pdf_path: str) -> list[str]:
+        """Extract tables from a PDF and save them as CSV files.
+
+        If multiple tables are found, an index is appended to the base filename.
+
+        Parameters
+        ----------
+        pdf_path : str
+            Path to the source PDF file.
+
+        Returns
+        -------
+        list[str]
+            Paths to the generated CSV files.
+        """
+
+        pdf_file = Path(pdf_path)
+        tables = []
+        with pdfplumber.open(pdf_file) as pdf:
+            for page in pdf.pages:
+                tables.extend(page.extract_tables() or [])
+
+        csv_paths: list[str] = []
+        if not tables:
+            return csv_paths
+
+        if len(tables) == 1:
+            csv_path = pdf_file.with_suffix(".csv")
+            self._table_to_csv(tables[0], csv_path)
+            csv_paths.append(str(csv_path))
+        else:
+            for idx, table in enumerate(tables, 1):
+                csv_path = pdf_file.with_name(
+                    f"{pdf_file.stem}_table_{idx:03d}.csv"
+                )
+                self._table_to_csv(table, csv_path)
+                csv_paths.append(str(csv_path))
+
+        return csv_paths
+
     def pdf_to_markdown(self, pdf_path: str) -> str:
         """Convert a PDF to Markdown, preserving tables when possible.
 
@@ -168,3 +216,4 @@ if __name__ == "__main__":
     scraper = meti()
     pdf_path = scraper.lng_weekly_inventory(date=last_wednesday.strftime("%Y%m%d"))
     scraper.pdf_to_markdown(pdf_path)
+    scraper.pdf_tables_to_csv(pdf_path)
