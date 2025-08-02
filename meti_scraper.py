@@ -1,16 +1,34 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+import requests
+from pathlib import Path
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+class meti:
+    """Downloader for METI weekly LNG stock PDF."""
 
+    _URL = (
+        "https://www.enecho.meti.go.jp/category/electricity_and_gas/"
+        "electricity_measures/pdf/denryoku_LNG_stock.pdf"
+    )
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+    def lng_weekly_inventory(self, date: str) -> str:
+        """Download weekly LNG inventory PDF for the given date.
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+        Parameters
+        ----------
+        date: str
+            Date string in YYYYMMDD format used in the filename.
+
+        Returns
+        -------
+        str
+            Path to the downloaded PDF file.
+        """
+        directory = Path("pdf") / "lng"
+        directory.mkdir(parents=True, exist_ok=True)
+        file_path = directory / f"denryoku_LNG_stock_{date}.pdf"
+
+        response = requests.get(self._URL)
+        response.raise_for_status()
+        file_path.write_bytes(response.content)
+
+        return str(file_path)
