@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from pathlib import Path
-from urllib.parse import quote
 
 import csv
 from openpyxl import load_workbook
@@ -189,6 +188,11 @@ class meti:
 
         This method retrieves two datasets related to the index of
         tertiary industry activity and saves them with Japanese filenames.
+        The datasets are provided by METI at the following URLs:
+
+        - ``https://www.meti.go.jp/statistics/tyo/sanzi/result/excel/b2020_ksij.xlsx``
+        - ``https://www.meti.go.jp/statistics/tyo/sanzi/result/excel/b2020_ITA_linkj.xlsx``
+
         The workbook titled ``第３次産業活動指数_季節指数`` contains only one
         sheet, which is exported as a CSV file. For the workbook titled
         ``第３次産業活動指数_接続指数``, the sheet ``季調済指数`` is exported
@@ -205,7 +209,6 @@ class meti:
             Paths to the downloaded Excel files and generated CSV file.
         """
 
-        base_url = "https://www.meti.go.jp/statistics/tyo/sanzi/xls/"
         directory = Path("xls") / "ita"
         directory.mkdir(parents=True, exist_ok=True)
 
@@ -224,7 +227,9 @@ class meti:
         file_paths: list[str] = []
 
         seasonal_name = f"第３次産業活動指数_季節指数_{date}.xlsx"
-        seasonal_url = base_url + quote(seasonal_name)
+        seasonal_url = (
+            "https://www.meti.go.jp/statistics/tyo/sanzi/result/excel/b2020_ksij.xlsx"
+        )
         try:
             response = session.get(seasonal_url, headers=headers, timeout=10)
             response.raise_for_status()
@@ -245,7 +250,9 @@ class meti:
         file_paths.append(str(seasonal_csv))
 
         connected_name = f"第３次産業活動指数_接続指数_{date}.xlsx"
-        connected_url = base_url + quote(connected_name)
+        connected_url = (
+            "https://www.meti.go.jp/statistics/tyo/sanzi/result/excel/b2020_ITA_linkj.xlsx"
+        )
         try:
             response = session.get(connected_url, headers=headers, timeout=10)
             response.raise_for_status()
