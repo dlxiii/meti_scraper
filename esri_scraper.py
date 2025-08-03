@@ -49,7 +49,12 @@ class esri:
             )
             response.raise_for_status()
         except requests.exceptions.RequestException as err:
-            raise RuntimeError("Failed to download ESRI GDP page") from err
+            # Preserve the original exception message so callers can
+            # understand why the request failed (e.g. proxy issues or
+            # connection timeouts).
+            raise RuntimeError(
+                f"Failed to download ESRI GDP page: {err}"
+            ) from err
 
         soup = BeautifulSoup(response.content, "html.parser")
 
@@ -80,7 +85,7 @@ class esri:
                     csv_response.raise_for_status()
                 except requests.exceptions.RequestException as err:
                     raise RuntimeError(
-                        f"Failed to download CSV from {csv_url}"
+                        f"Failed to download CSV from {csv_url}: {err}"
                     ) from err
 
                 file_path = directory / f"{section}_{label}_{date}.csv"
