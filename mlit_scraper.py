@@ -1,7 +1,9 @@
 from pathlib import Path
 from urllib.parse import urljoin
+from datetime import datetime
 
 import csv
+import sys
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -88,3 +90,15 @@ class mlit:
                 writer.writerow(sheet.row_values(row_idx))
 
         return [str(xls_path), str(csv_path)]
+
+
+if __name__ == "__main__":
+    today = datetime.today()
+    scraper = mlit()
+    try:
+        file_paths = scraper.jutaku(date=today.strftime("%Y%m"))
+        for path in file_paths:
+            print(path)
+    except RuntimeError as err:
+        print(err)
+        sys.exit(1)
