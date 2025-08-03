@@ -11,7 +11,7 @@ class esri:
     """Downloader for ESRI GDP data."""
 
     _BASE_URL = "https://www.esri.cao.go.jp"
-    _PAGE = _BASE_URL + "/jp/sna/index.html"
+    _PAGE = _BASE_URL + "/jp/sna/menu.html"
 
     def gdp(self, date: str) -> list[str]:
         """Download GDP CSV files for the given date.
@@ -48,15 +48,23 @@ class esri:
                 timeout=10,
             )
             response.raise_for_status()
+            html = response.text
         except requests.exceptions.RequestException as err:
-            # Preserve the original exception message so callers can
-            # understand why the request failed (e.g. proxy issues or
-            # connection timeouts).
-            raise RuntimeError(
-                f"Failed to download ESRI GDP page: {err}"
-            ) from err
+            try:
+                from playwright.sync_api import sync_playwright
 
-        soup = BeautifulSoup(response.content, "html.parser")
+                with sync_playwright() as p:
+                    browser = p.chromium.launch()
+                    page = browser.new_page()
+                    page.goto(self._PAGE)
+                    html = page.content()
+                    browser.close()
+            except Exception as p_err:
+                raise RuntimeError(
+                    f"Failed to download ESRI GDP page: {err} ; {p_err}"
+                ) from p_err
+
+        soup = BeautifulSoup(html, "html.parser")
 
         sections = [
             "四半期GDP成長率",
