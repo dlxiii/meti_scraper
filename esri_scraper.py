@@ -11,7 +11,7 @@ class esri:
     """Downloader for ESRI GDP data."""
 
     _BASE_URL = "https://www.esri.cao.go.jp"
-    _PAGE = _BASE_URL + "/jp/sna/index.html"
+    _PAGE = _BASE_URL + "/jp/sna/menu.html"
 
     def gdp(self, date: str) -> list[str]:
         """Download GDP CSV files for the given date.
