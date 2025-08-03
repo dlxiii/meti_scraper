@@ -57,6 +57,7 @@ class meti:
             raise RuntimeError("Failed to download METI LNG stock PDF") from err
 
         file_path.write_bytes(response.content)
+        print(file_path)
 
         return str(file_path)
 
@@ -451,5 +452,8 @@ if __name__ == "__main__":
         print(path)
 
     pdf_path = scraper.lng_weekly_inventory(date=target_wed.strftime("%Y%m%d"))
-    scraper.pdf_to_markdown(pdf_path)
-    scraper.pdf_tables_to_csv(pdf_path)
+    md_path = scraper.pdf_to_markdown(pdf_path)
+    print(md_path)
+    csv_paths = scraper.pdf_tables_to_csv(pdf_path)
+    for path in csv_paths:
+        print(path)

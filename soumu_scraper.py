@@ -89,6 +89,7 @@ class soumu:
 
             file_path = directory / f"{safe_name}_{yyyymm}.pdf"
             file_path.write_bytes(pdf_resp.content)
+            print(file_path)
             existing_hashes.add(file_hash)
             downloaded.append(str(file_path))
 
@@ -98,9 +99,7 @@ class soumu:
 if __name__ == "__main__":
     scraper = soumu()
     try:
-        paths = scraper.it_survey()
-        for p in paths:
-            print(p)
+        scraper.it_survey()
     except RuntimeError as err:
         print(err)
         sys.exit(1)

@@ -18,8 +18,11 @@ if __name__ == "__main__":
     scraper = meti()
     try:
         pdf_path = scraper.lng_weekly_inventory(date=target_wed.strftime("%Y%m%d"))
-        scraper.pdf_to_markdown(pdf_path)
-        scraper.pdf_tables_to_csv(pdf_path)
+        md_path = scraper.pdf_to_markdown(pdf_path)
+        print(md_path)
+        csv_paths = scraper.pdf_tables_to_csv(pdf_path)
+        for path in csv_paths:
+            print(path)
     except RuntimeError as err:
         print(err)
         sys.exit(1)
