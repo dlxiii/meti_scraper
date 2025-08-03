@@ -87,7 +87,9 @@ class mlit:
         with csv_path.open("w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
             for row_idx in range(sheet.nrows):
-                writer.writerow(sheet.row_values(row_idx))
+                row = sheet.row_values(row_idx)
+                if any(str(cell).strip() for cell in row):
+                    writer.writerow(row)
 
         return [str(xls_path), str(csv_path)]
 
