@@ -123,12 +123,14 @@ if __name__ == "__main__":
 
     scraper = nrg()
 
-    start = datetime.strptime("20250101","%Y%m%d")
-    end = datetime.strptime("20250722","%Y%m%d")
-    print(
-        f"Downloading Japan NRG Weekly from {start:%Y-%m-%d} to {end:%Y-%m-%d}"
-    )
-    current = start
+    start = datetime.strptime("20200101", "%Y%m%d")
+    end = datetime.strptime("20220101", "%Y%m%d")
+
+    offset = (7 - start.weekday()) % 7
+    current = start + timedelta(days=offset)
+
+    print(f"Downloading Japan NRG Weekly from {current:%Y-%m-%d} to {end:%Y-%m-%d} (Mondays only)")
+
     while current <= end:
         try:
             path = scraper.nrg_japan_weekly(date=current)
