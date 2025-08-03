@@ -72,9 +72,11 @@ class mof:
 
                 file_name = Path(url).name
                 file_path = directory / file_name
-                # Convert the downloaded Shift_JIS encoded content to UTF-8
+                # Convert the downloaded Shift_JIS encoded content to UTF-8 and
+                # remove any blank lines.
                 text = response.content.decode("shift_jis")
-                file_path.write_text(text, encoding="utf-8")
+                lines = [line for line in text.splitlines() if line.strip()]
+                file_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
                 print(file_path)
                 downloaded.append(str(file_path))
 
