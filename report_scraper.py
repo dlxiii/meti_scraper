@@ -123,8 +123,8 @@ if __name__ == "__main__":
 
     scraper = nrg()
 
-    start = datetime.strptime("20200101", "%Y%m%d")
-    end = datetime.strptime("20220101", "%Y%m%d")
+    start = datetime.strptime("20210101", "%Y%m%d")
+    end = datetime.strptime("20251201", "%Y%m%d")
 
     offset = (7 - start.weekday()) % 7
     current = start + timedelta(days=offset)
