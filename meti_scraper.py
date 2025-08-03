@@ -361,16 +361,21 @@ class meti:
 
         return csv_paths
 
-    def pdf_to_markdown(self, pdf_path: str) -> str:
+    def pdf_to_markdown(self, pdf_path: str, include_images: bool = True) -> str:
         """Convert a PDF to Markdown, preserving tables when possible.
 
         This method extracts text and tables from each page. If a page
-        lacks embedded text, OCR is used as a fallback.
+        lacks embedded text, OCR is used as a fallback.  Optionally the
+        images found in the PDF can be exported and referenced in the
+        generated Markdown.
 
         Parameters
         ----------
         pdf_path : str
             Path to the source PDF file.
+        include_images : bool, default ``True``
+            If ``True`` images found in the PDF are saved to PNG files and
+            referenced in the Markdown.  If ``False`` images are ignored.
 
         Returns
         -------
@@ -392,23 +397,24 @@ class meti:
                     md_table = self._table_to_markdown(table)
                     if md_table:
                         parts.append(md_table)
-                for img in page.images:
-                    bbox = (
-                        img["x0"],
-                        page.height - img["y1"],
-                        img["x1"],
-                        page.height - img["y0"],
-                    )
-                    cropped = page.crop(bbox)
-                    pil_img = cropped.to_image(resolution=300).original
-                    image_path = pdf_file.with_name(
-                        f"{pdf_file.stem}_{image_counter:03d}.png"
-                    )
-                    pil_img.save(image_path)
-                    parts.append(
-                        f"![Figure {image_counter:03d}]({image_path.name})"
-                    )
-                    image_counter += 1
+                if include_images:
+                    for img in page.images:
+                        bbox = (
+                            img["x0"],
+                            page.height - img["y1"],
+                            img["x1"],
+                            page.height - img["y0"],
+                        )
+                        cropped = page.crop(bbox)
+                        pil_img = cropped.to_image(resolution=300).original
+                        image_path = pdf_file.with_name(
+                            f"{pdf_file.stem}_{image_counter:03d}.png"
+                        )
+                        pil_img.save(image_path)
+                        parts.append(
+                            f"![Figure {image_counter:03d}]({image_path.name})"
+                        )
+                        image_counter += 1
 
         md_file.write_text("\n\n".join(parts), encoding="utf-8")
         return str(md_file)
