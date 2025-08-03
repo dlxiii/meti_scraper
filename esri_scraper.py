@@ -100,7 +100,12 @@ class esri:
                         f"Failed to decode CSV from {csv_url}: {err}"
                     ) from err
 
-                file_path.write_text(csv_text, encoding="utf-8")
+                # Remove empty lines so that downstream consumers do not
+                # have to handle blank rows in the CSV output.
+                cleaned_lines = [line for line in csv_text.splitlines() if line.strip()]
+                cleaned_text = "\n".join(cleaned_lines) + "\n"
+
+                file_path.write_text(cleaned_text, encoding="utf-8")
                 results.append(str(file_path))
 
         return results
