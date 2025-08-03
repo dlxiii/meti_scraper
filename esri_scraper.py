@@ -89,7 +89,18 @@ class esri:
                     ) from err
 
                 file_path = directory / f"{section}_{label}_{date}.csv"
-                file_path.write_bytes(csv_response.content)
+
+                # The CSV files provided by ESRI are encoded in Shift JIS.
+                # Convert the content to UTF-8 so that downstream consumers
+                # can read them without handling encoding details.
+                try:
+                    csv_text = csv_response.content.decode("shift_jis")
+                except UnicodeDecodeError as err:
+                    raise RuntimeError(
+                        f"Failed to decode CSV from {csv_url}: {err}"
+                    ) from err
+
+                file_path.write_text(csv_text, encoding="utf-8")
                 results.append(str(file_path))
 
         return results
