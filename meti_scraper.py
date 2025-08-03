@@ -313,6 +313,11 @@ class meti:
         with csv_path.open("w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
             for row in table:
+                # Skip completely empty rows to avoid blank lines in the output
+                if not any(
+                    cell is not None and str(cell).strip() for cell in row
+                ):
+                    continue
                 writer.writerow([cell or "" for cell in row])
 
     def pdf_tables_to_csv(self, pdf_path: str) -> list[str]:

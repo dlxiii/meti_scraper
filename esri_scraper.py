@@ -229,6 +229,10 @@ class esri:
             with csv_path.open("w", newline="", encoding="utf-8") as csvfile:
                 writer = csv.writer(csvfile)
                 for row in ws.iter_rows(values_only=True):
+                    if not any(
+                        cell is not None and str(cell).strip() for cell in row
+                    ):
+                        continue
                     writer.writerow([cell if cell is not None else "" for cell in row])
             results.append(str(csv_path))
         wb.close()
