@@ -20,18 +20,28 @@ if __name__ == "__main__":
         print(
             f"Downloading Japan NRG Weekly from {start:%Y-%m-%d} to {end:%Y-%m-%d}"
         )
-        current = start
+        current = start + timedelta(days=(7 - start.weekday()) % 7)
         while current <= end:
             try:
                 path = scraper.nrg_japan_weekly(date=current)
-                print(path)
-            except RuntimeError as err:
-                print(err)
+            except RuntimeError as err_mon:
+                try:
+                    path = scraper.nrg_japan_weekly(date=current + timedelta(days=1))
+                except RuntimeError as err_tue:
+                    print(err_mon)
+                    print(err_tue)
+                    current += timedelta(days=7)
+                    continue
+            print(path)
             current += timedelta(days=7)
     else:
         try:
             path = scraper.nrg_japan_weekly(date=monday)
-            print(path)
-        except RuntimeError as err:
-            print(err)
-            sys.exit(1)
+        except RuntimeError as err_mon:
+            try:
+                path = scraper.nrg_japan_weekly(date=monday + timedelta(days=1))
+            except RuntimeError as err_tue:
+                print(err_mon)
+                print(err_tue)
+                sys.exit(1)
+        print(path)
