@@ -5,7 +5,6 @@ from pathlib import Path
 import sys
 
 import requests
-from googletrans import Translator
 
 from meti_scraper import meti
 
@@ -77,24 +76,28 @@ class nrg:
 
         raise RuntimeError("Failed to locate Japan NRG Data PDF")
 
-    def nrg_japan_weekly(self, date: datetime | None = None) -> list[str]:
+    def nrg_japan_weekly(
+        self, date: datetime | None = None, translate: bool = False
+    ) -> list[str]:
         """Download the weekly Japan NRG report and convert it to Markdown.
 
         In addition to downloading the PDF, this method creates two Markdown
-        files: an English version with tables preserved and a Chinese version
-        generated via machine translation.  Charts or other figures are not
-        exported.
+        files: an English version with tables preserved and, optionally, a
+        Chinese version generated via machine translation. Charts or other
+        figures are not exported.
 
         Parameters
         ----------
         date: datetime | None
-            Date used to determine the report week.  Defaults to today.
+            Date used to determine the report week. Defaults to today.
+        translate: bool, default False
+            If ``True``, generate a Chinese translation of the report.
 
         Returns
         -------
         list[str]
-            Paths to the downloaded PDF and the generated Markdown files in
-            English and Chinese respectively.
+            Paths to the downloaded PDF and the generated Markdown files. The
+            Chinese version is included only when ``translate`` is ``True``.
         """
         date = date or datetime.now()
 
@@ -127,6 +130,11 @@ class nrg:
         md_en_en = md_en_file.with_name(md_en_file.stem + "_en.md")
         md_en_file.rename(md_en_en)
         md_en_file = md_en_en
+
+        if not translate:
+            return [pdf_path, str(md_en_file)]
+
+        from googletrans import Translator
 
         translator = Translator()
         lines = md_en_file.read_text(encoding="utf-8").splitlines()
