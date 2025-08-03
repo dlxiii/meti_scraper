@@ -5,9 +5,7 @@ import sys
 if __name__ == "__main__":
     scraper = soumu()
     try:
-        paths = scraper.it_survey()
-        for path in paths:
-            print(path)
+        scraper.it_survey()
     except RuntimeError as err:
         print(err)
         sys.exit(1)
