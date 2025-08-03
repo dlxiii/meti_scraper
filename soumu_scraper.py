@@ -1,8 +1,8 @@
 from pathlib import Path
 from urllib.parse import urljoin
-from datetime import datetime
 
 import hashlib
+import re
 import sys
 import requests
 from requests.adapters import HTTPAdapter
@@ -15,13 +15,8 @@ class soumu:
 
     _URL = "https://www.soumu.go.jp/johotsusintokei/field/tsuushin/02kekka.html"
 
-    def it_survey(self, date: str) -> list[str]:
+    def it_survey(self) -> list[str]:
         """Download Communications Usage Trend Survey PDFs.
-
-        Parameters
-        ----------
-        date: str
-            Date string in YYYYMM format appended to each filename.
 
         Returns
         -------
@@ -81,8 +76,18 @@ class soumu:
             if file_hash in existing_hashes:
                 continue
 
-            original_name = Path(link["href"]).name
-            file_path = directory / f"{Path(original_name).stem}_{date}{Path(original_name).suffix}"
+            # Extract YYYYMM from the first 6 digits in the href.
+            match = re.search(r"(\d{6})", link["href"])
+            if match:
+                yyyymm = f"20{match.group(1)[:2]}{match.group(1)[2:4]}"
+            else:
+                yyyymm = "unknown"
+
+            # Use the link text as the base filename.
+            base_name = link.get_text(strip=True)
+            safe_name = re.sub(r"[\\/:*?\"<>|\s]+", "_", base_name)
+
+            file_path = directory / f"{safe_name}_{yyyymm}.pdf"
             file_path.write_bytes(pdf_resp.content)
             existing_hashes.add(file_hash)
             downloaded.append(str(file_path))
@@ -91,10 +96,9 @@ class soumu:
 
 
 if __name__ == "__main__":
-    today = datetime.today()
     scraper = soumu()
     try:
-        paths = scraper.it_survey(date=today.strftime("%Y%m"))
+        paths = scraper.it_survey()
         for p in paths:
             print(p)
     except RuntimeError as err:
