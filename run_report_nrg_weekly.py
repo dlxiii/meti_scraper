@@ -23,15 +23,17 @@ if __name__ == "__main__":
         current = start
         while current <= end:
             try:
-                path = scraper.nrg_japan_weekly(date=current)
-                print(path)
+                paths = scraper.nrg_japan_weekly(date=current)
+                for p in paths:
+                    print(p)
             except RuntimeError as err:
                 print(err)
             current += timedelta(days=7)
     else:
         try:
-            path = scraper.nrg_japan_weekly(date=monday)
-            print(path)
+            paths = scraper.nrg_japan_weekly(date=monday)
+            for p in paths:
+                print(p)
         except RuntimeError as err:
             print(err)
             sys.exit(1)

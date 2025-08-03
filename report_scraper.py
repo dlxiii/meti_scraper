@@ -5,6 +5,9 @@ from pathlib import Path
 import sys
 
 import requests
+from googletrans import Translator
+
+from meti_scraper import meti
 
 
 class nrg:
@@ -74,8 +77,13 @@ class nrg:
 
         raise RuntimeError("Failed to locate Japan NRG Data PDF")
 
-    def nrg_japan_weekly(self, date: datetime | None = None) -> str:
-        """Download the weekly Japan NRG report PDF.
+    def nrg_japan_weekly(self, date: datetime | None = None) -> list[str]:
+        """Download the weekly Japan NRG report and convert it to Markdown.
+
+        In addition to downloading the PDF, this method creates two Markdown
+        files: an English version with tables preserved and a Chinese version
+        generated via machine translation.  Charts or other figures are not
+        exported.
 
         Parameters
         ----------
@@ -84,8 +92,9 @@ class nrg:
 
         Returns
         -------
-        str
-            Path to the downloaded PDF file.
+        list[str]
+            Paths to the downloaded PDF and the generated Markdown files in
+            English and Chinese respectively.
         """
         date = date or datetime.now()
 
@@ -106,11 +115,55 @@ class nrg:
 
         date_str = url_date.strftime("%Y%m%d")
 
-        return self._download(
+        pdf_path = self._download(
             url,
             Path("pdf") / "nrg" / "weekly",
             f"Japan_NRG_Weekly_{date_str}.pdf",
         )
+
+        helper = meti()
+        md_en_path = helper.pdf_to_markdown(pdf_path, include_images=False)
+        md_en_file = Path(md_en_path)
+        md_en_en = md_en_file.with_name(md_en_file.stem + "_en.md")
+        md_en_file.rename(md_en_en)
+        md_en_file = md_en_en
+
+        translator = Translator()
+        lines = md_en_file.read_text(encoding="utf-8").splitlines()
+        cn_lines: list[str] = []
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith("|"):
+                # Preserve table structure; translate each cell if not a separator
+                if set(stripped) <= {"|", ":", "-", " "}:
+                    cn_lines.append(line)
+                    continue
+                cells = line.split("|")
+                new_cells = []
+                for cell in cells:
+                    cell_stripped = cell.strip()
+                    if cell_stripped:
+                        try:
+                            new_cells.append(
+                                translator.translate(cell_stripped, dest="zh-cn").text
+                            )
+                        except Exception:
+                            new_cells.append(cell_stripped)
+                    else:
+                        new_cells.append("")
+                cn_lines.append("|".join(new_cells))
+            elif stripped:
+                try:
+                    cn_lines.append(translator.translate(line, dest="zh-cn").text)
+                except Exception:
+                    cn_lines.append(line)
+            else:
+                cn_lines.append(line)
+
+        md_cn_file = md_en_file.with_name(md_en_file.stem.replace("_en", "_cn") + ".md")
+        md_cn_file.write_text("\n".join(cn_lines), encoding="utf-8")
+
+        return [pdf_path, str(md_en_file), str(md_cn_file)]
 
 
 if __name__ == "__main__":
