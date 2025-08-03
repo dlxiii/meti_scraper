@@ -246,10 +246,19 @@ if __name__ == "__main__":
     today = datetime.today()
 
     scraper = esri()
+
     try:
-        gdp_paths = scraper.gdp(date=today.strftime("%Y%m"))
-        for path in gdp_paths:
+        kp23_paths = scraper.kp23(date=today.strftime("%Y%m"))
+        for path in kp23_paths:
             print(path)
     except RuntimeError as err:
         print(err)
         sys.exit(1)
+
+    # try:
+    #     gdp_paths = scraper.gdp(date=today.strftime("%Y%m"))
+    #     for path in gdp_paths:
+    #         print(path)
+    # except RuntimeError as err:
+    #     print(err)
+    #     sys.exit(1)
