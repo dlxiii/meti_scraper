@@ -88,18 +88,23 @@ class nrg:
             Path to the downloaded PDF file.
         """
         date = date or datetime.now()
-        year = date.year
-        month = date.month
-        day = date.day
-        date_str = date.strftime("%Y%m%d")
 
-        url = (
-            f"{self._BASE_URL}/{year}/{month:02d}/"
-            f"Japan-NRG-Weekly-{year}{month:02d}{day:02d}.pdf"
-        )
+        def build_url(d: datetime) -> str:
+            return (
+                f"{self._BASE_URL}/{d.year}/{d.month:02d}/"
+                f"Japan-NRG-Weekly-{d.year}{d.month:02d}{d.day:02d}.pdf"
+            )
+
+        url_date = date
+        url = build_url(url_date)
 
         if requests.head(url).status_code != 200:
-            raise RuntimeError("Failed to locate Japan NRG Weekly PDF")
+            url_date = date + timedelta(days=1)
+            url = build_url(url_date)
+            if requests.head(url).status_code != 200:
+                raise RuntimeError("Failed to locate Japan NRG Weekly PDF")
+
+        date_str = url_date.strftime("%Y%m%d")
 
         return self._download(
             url,
