@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 class soumu:
     """Downloader for MIC Communications Usage Trend Survey PDFs."""
 
-    _URL = "https://www.soumu.go.jp/johotsusintokei/field/tsuushin/02kekka.html"
+    _URL = "https://www.soumu.go.jp/johotsusintokei/statistics/statistics05a.html"
 
     def it_survey(self) -> list[str]:
         """Download Communications Usage Trend Survey PDFs.
