@@ -88,3 +88,18 @@ class esri:
                 results.append(str(file_path))
 
         return results
+
+if __name__ == "__main__":
+    from datetime import datetime
+    import sys
+
+    today = datetime.today()
+
+    scraper = esri()
+    try:
+        gdp_paths = scraper.gdp(date=today.strftime("%Y%m"))
+        for path in gdp_paths:
+            print(path)
+    except RuntimeError as err:
+        print(err)
+        sys.exit(1)
