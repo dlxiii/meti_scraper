@@ -2,3 +2,4 @@ requests
 pdfplumber
 pytesseract
 openpyxl
+beautifulsoup4
