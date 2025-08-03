@@ -3,3 +3,4 @@ pdfplumber
 pytesseract
 openpyxl
 beautifulsoup4
+xlrd
