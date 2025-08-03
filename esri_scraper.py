@@ -162,12 +162,19 @@ class esri:
             ) from err
 
         soup = BeautifulSoup(response.content, "html.parser")
-        ul = soup.find("ul", class_="bulletList")
-        if not ul:
+
+        pdf_link = None
+        xls_link = None
+        lists = soup.find_all("ul", class_="bulletList")
+        if not lists:
             raise RuntimeError("Failed to locate kp23 links on ESRI page")
 
-        pdf_link = ul.find("a", href=lambda h: h and h.endswith(".pdf"))
-        xls_link = ul.find("a", href=lambda h: h and h.endswith((".xls", ".xlsx")))
+        for ul in lists:
+            pdf_link = ul.find("a", href=lambda h: h and h.endswith(".pdf"))
+            xls_link = ul.find("a", href=lambda h: h and h.endswith((".xls", ".xlsx")))
+            if pdf_link and xls_link:
+                break
+
         if not pdf_link or not xls_link:
             raise RuntimeError("Missing PDF or Excel link on kp23 page")
 
