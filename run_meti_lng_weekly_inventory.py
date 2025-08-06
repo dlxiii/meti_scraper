@@ -1,10 +1,27 @@
 from datetime import datetime, timedelta
+import argparse
+import os
 import sys
 
 from meti_scraper import meti
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=float(os.getenv("METI_TIMEOUT", 10)),
+        help="Request timeout in seconds",
+    )
+    parser.add_argument(
+        "--proxy",
+        type=str,
+        default=os.getenv("METI_PROXY"),
+        help="HTTPS proxy server URL",
+    )
+    args = parser.parse_args()
+
     today = datetime.today()
     weekday = today.weekday()  # Monday = 0, Sunday = 6
 
@@ -17,7 +34,12 @@ if __name__ == "__main__":
 
     scraper = meti()
     try:
-        pdf_path = scraper.lng_weekly_inventory(date=target_wed.strftime("%Y%m%d"))
+        proxies = {"https": args.proxy} if args.proxy else None
+        pdf_path = scraper.lng_weekly_inventory(
+            date=target_wed.strftime("%Y%m%d"),
+            timeout=args.timeout,
+            proxies=proxies,
+        )
         md_path = scraper.pdf_to_markdown(pdf_path)
         print(md_path)
         csv_paths = scraper.pdf_tables_to_csv(pdf_path)
