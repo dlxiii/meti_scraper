@@ -57,7 +57,10 @@ class meti:
             )
             response.raise_for_status()
         except requests.exceptions.RequestException as err:
-            raise RuntimeError("Failed to download METI LNG stock PDF") from err
+            raise RuntimeError(
+                f"Failed to download METI LNG stock PDF: {err}. "
+                "This may be due to network restrictions or the resource being unavailable."
+            ) from err
 
         file_path.write_bytes(response.content)
         print(file_path)

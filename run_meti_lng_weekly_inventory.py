@@ -25,5 +25,9 @@ if __name__ == "__main__":
             print(path)
     except RuntimeError as err:
         print(err)
+        print("Check network connection or if the METI site is reachable.")
+        sys.exit(1)
+    except Exception as err:
+        print(f"Unexpected error: {err}")
         sys.exit(1)
 
