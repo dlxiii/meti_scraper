@@ -7,7 +7,6 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import urllib3
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import pdfplumber
 import pytesseract
 
@@ -20,20 +19,13 @@ class meti:
         "electricity_measures/pdf/denryoku_LNG_stock.pdf"
     )
 
-    def lng_weekly_inventory(
-        self, date: str, timeout: float = 10, proxies: dict | None = None
-    ) -> str:
+    def lng_weekly_inventory(self, date: str) -> str:
         """Download weekly LNG inventory PDF for the given date.
 
         Parameters
         ----------
         date: str
             Date string in YYYYMMDD format used in the filename.
-        timeout: float, default 10
-            Seconds to wait for the request before timing out.
-        proxies: dict | None
-            Optional proxy settings matching :meth:`playwright`'s
-            ``launch`` API. Only the first of ``https`` or ``http`` is used.
 
         Returns
         -------
@@ -44,36 +36,33 @@ class meti:
         directory.mkdir(parents=True, exist_ok=True)
         file_path = directory / f"denryoku_LNG_stock_{date}.pdf"
 
-        launch_args: dict[str, object] = {"headless": True}
-        if proxies:
-            server = proxies.get("https") or proxies.get("http")
-            if server:
-                launch_args["proxy"] = {"server": server}
+        session = requests.Session()
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        retry = Retry(
+            total=5,
+            backoff_factor=1,
+            status_forcelist=[500, 502, 503, 504],
+            allowed_methods=["GET"],
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
 
         try:
-            with sync_playwright() as p:
-                browser = p.chromium.launch(**launch_args)
-                context = browser.new_context(accept_downloads=True)
-                page = context.new_page()
-                try:
-                    with page.expect_download() as download_info:
-                        page.goto(self._URL, timeout=timeout * 1000)
-                    download = download_info.value
-                    download.save_as(file_path)
-                finally:
-                    context.close()
-                    browser.close()
-        except PlaywrightTimeoutError as err:
-            raise RuntimeError(
-                f"Failed to download METI LNG stock PDF: {err}. "
-                "This may be due to network restrictions or the resource being unavailable."
-            ) from err
-        except Exception as err:
+            response = session.get(
+                self._URL,
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=10,
+                verify=False,
+            )
+            response.raise_for_status()
+        except requests.exceptions.RequestException as err:
             raise RuntimeError(
                 f"Failed to download METI LNG stock PDF: {err}. "
                 "This may be due to network restrictions or the resource being unavailable."
             ) from err
 
+        file_path.write_bytes(response.content)
         print(file_path)
 
         return str(file_path)
@@ -474,15 +463,7 @@ if __name__ == "__main__":
     for path in iip_paths:
         print(path)
 
-    import os
-
-    timeout = float(os.getenv("METI_TIMEOUT", 10))
-    proxy = os.getenv("METI_PROXY")
-    proxies = {"https": proxy} if proxy else None
-
-    pdf_path = scraper.lng_weekly_inventory(
-        date=target_wed.strftime("%Y%m%d"), timeout=timeout, proxies=proxies
-    )
+    pdf_path = scraper.lng_weekly_inventory(date=target_wed.strftime("%Y%m%d"))
     md_path = scraper.pdf_to_markdown(pdf_path)
     print(md_path)
     csv_paths = scraper.pdf_tables_to_csv(pdf_path)
