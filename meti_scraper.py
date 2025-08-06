@@ -6,6 +6,7 @@ from openpyxl import load_workbook
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import urllib3
 import pdfplumber
 import pytesseract
 
@@ -36,6 +37,7 @@ class meti:
         file_path = directory / f"denryoku_LNG_stock_{date}.pdf"
 
         session = requests.Session()
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         retry = Retry(
             total=5,
             backoff_factor=1,
@@ -51,6 +53,7 @@ class meti:
                 self._URL,
                 headers={"User-Agent": "Mozilla/5.0"},
                 timeout=10,
+                verify=False,
             )
             response.raise_for_status()
         except requests.exceptions.RequestException as err:
